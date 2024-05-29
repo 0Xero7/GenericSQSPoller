@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
-func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, messageHandler func(m any) error) {
+func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, messageHandler func(m map[string]any) error) {
 	defer wg.Done()
 
 	data := new(map[string]any)
