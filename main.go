@@ -21,7 +21,7 @@ func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClie
 	}
 
 	fmt.Println("Processing", data)
-	err = messageHandler(data)
+	err = messageHandler(*data)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -40,14 +40,10 @@ func Start(context context.Context, sqsClient *sqs.Client, queueDetails *sqs.Rec
 			fmt.Println(err)
 		}
 
-		handler := func(m any) error {
-			return nil
-		}
-
 		wg := sync.WaitGroup{}
 		wg.Add(len(out.Messages))
 		for _, v := range out.Messages {
-			go handleMessage(v, &wg, *queueDetails.QueueUrl, sqsClient, handler)
+			go handleMessage(v, &wg, *queueDetails.QueueUrl, sqsClient, messageHandler)
 		}
 
 		wg.Wait()
