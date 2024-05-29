@@ -20,6 +20,7 @@ func handleMessage[T any](m types.Message, wg *sync.WaitGroup, queueUrl string, 
 		return
 	}
 
+	fmt.Println("Processing", data)
 	err = messageHandler(data)
 	if err != nil {
 		fmt.Println(err)
