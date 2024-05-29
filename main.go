@@ -25,10 +25,13 @@ func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClie
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		sqsClient.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
+		_, err = sqsClient.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
 			QueueUrl:      &queueUrl,
 			ReceiptHandle: m.ReceiptHandle,
 		})
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
