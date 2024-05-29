@@ -10,10 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
-func handleMessage[T any](m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, messageHandler func(m any) error) {
+func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, messageHandler func(m any) error) {
 	defer wg.Done()
 
-	data := new(T)
+	data := new(map[string]any)
 	err := json.Unmarshal([]byte(*m.Body), data)
 	if err != nil {
 		fmt.Println("Errored!", err)
@@ -47,7 +47,7 @@ func Start(context context.Context, sqsClient *sqs.Client, queueDetails *sqs.Rec
 		wg := sync.WaitGroup{}
 		wg.Add(len(out.Messages))
 		for _, v := range out.Messages {
-			go handleMessage[map[string]any](v, &wg, *queueDetails.QueueUrl, sqsClient, handler)
+			go handleMessage(v, &wg, *queueDetails.QueueUrl, sqsClient, handler)
 		}
 
 		wg.Wait()
