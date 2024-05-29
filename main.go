@@ -10,32 +10,32 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
 )
 
-func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, messageHandler func(m map[string]any) error) {
+func handleMessage(m types.Message, wg *sync.WaitGroup, queueUrl string, sqsClient *sqs.Client, errCh chan error, messageHandler func(m map[string]any) error) {
 	defer wg.Done()
 
 	data := new(map[string]any)
 	err := json.Unmarshal([]byte(*m.Body), data)
 	if err != nil {
-		fmt.Println("Errored!", err)
+		errCh <- err
 		return
 	}
 
 	fmt.Println("Processing", data)
 	err = messageHandler(*data)
 	if err != nil {
-		fmt.Println(err)
+		errCh <- err
 	} else {
 		_, err = sqsClient.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
 			QueueUrl:      &queueUrl,
 			ReceiptHandle: m.ReceiptHandle,
 		})
 		if err != nil {
-			fmt.Println(err)
+			errCh <- err
 		}
 	}
 }
 
-func Start(context context.Context, sqsClient *sqs.Client, queueDetails *sqs.ReceiveMessageInput, messageHandler func(m map[string]any) error) {
+func Start(context context.Context, sqsClient *sqs.Client, errCh chan error, queueDetails *sqs.ReceiveMessageInput, messageHandler func(m map[string]any) error) {
 	for {
 		out, err := sqsClient.ReceiveMessage(context, queueDetails)
 
@@ -46,7 +46,7 @@ func Start(context context.Context, sqsClient *sqs.Client, queueDetails *sqs.Rec
 		wg := sync.WaitGroup{}
 		wg.Add(len(out.Messages))
 		for _, v := range out.Messages {
-			go handleMessage(v, &wg, *queueDetails.QueueUrl, sqsClient, messageHandler)
+			go handleMessage(v, &wg, *queueDetails.QueueUrl, sqsClient, errCh, messageHandler)
 		}
 
 		wg.Wait()
